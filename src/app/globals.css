@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+
+  --color-border: var(--border);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-placeholder: var(--placeholder);
+
+  --color-hover: var(--hover);
+  --color-focus: var(--focus);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+:root {
+  /* Granny Diets: Organic, earthy color palette */
+  /* Colors extracted from Granny Diets source logo and images */
+  --primary: #d4a000; /* Darkened Golden Yellow for better contrast */
+  --secondary: #8dd348; /* Vibrant Green from 'Add to Cart' */
+  --accent: #61ce70; /* Secondary Green */
+  
+  --success: #61ce70;
+  --warning: #fecd00;
+  --error: #ef4444;
+
+  --background: #fdfdfd; /* Off-white for page background */
+  --surface: #ffffff;
+  --card: #ffffff;
+  
+  --border: #e2e8f0;
+  
+  --text-primary: #231f1d; /* Very dark brown/black from logo */
+  --text-secondary: #4b4b4b;
+  --text-muted: #737373;
+  --placeholder: #a3a3a3;
+  
+  --hover: #e5b800; /* Darker yellow for primary button hover */
+  --focus: #fef561; /* Lighter yellow for focus rings */
+
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+}
+
+
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}

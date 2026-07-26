@@ -1,0 +1,12 @@
+-- What: Creates the product-images storage bucket
+-- Why: To store product images securely
+-- Dependencies: Supabase storage schema, 006_rls.sql (for public.is_admin)
+
+insert into storage.buckets (id, name, public)
+values ('product-images', 'product-images', true)
+on conflict (id) do nothing;
+
+create policy "Public can view product images" on storage.objects for select using ( bucket_id = 'product-images' );
+create policy "Admin can upload product images" on storage.objects for insert with check ( bucket_id = 'product-images' and public.is_admin() );
+create policy "Admin can update product images" on storage.objects for update using ( bucket_id = 'product-images' and public.is_admin() );
+create policy "Admin can delete product images" on storage.objects for delete using ( bucket_id = 'product-images' and public.is_admin() );
