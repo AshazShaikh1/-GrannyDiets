@@ -110,7 +110,10 @@ export function CartDrawer() {
                 <div className="flex flex-1 flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-sm font-semibold text-text-primary line-clamp-1">{item.name}</h3>
+                      <h3 className="text-sm font-semibold text-text-primary line-clamp-1">
+                        {item.name}
+                        {item.variantName && <span className="block text-xs font-normal text-text-secondary mt-0.5">{item.variantName}</span>}
+                      </h3>
                       <p className="text-sm font-bold text-text-primary mt-1">₹{item.price.toFixed(2)}</p>
                     </div>
                     <button 

@@ -30,6 +30,7 @@ export function ShopFilters({ categories }: ShopFiltersProps) {
     
     // Use replace to avoid filling history with every keystroke
     router.replace(`/shop?${params.toString()}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, router]) // searchParams intentionally omitted to avoid loops
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

@@ -14,7 +14,15 @@ export const productSchema = z.object({
   selling_price: z.number().min(0, 'Selling price must be at least 0'),
   stock: z.number().int().min(0, 'Stock must be at least 0'),
   is_featured: z.boolean(),
-  is_active: z.boolean(),
+  variants: z.array(z.object({
+    id: z.string().optional(),
+    name: z.string().min(1, 'Variant name is required'),
+    selling_price: z.number().min(0, 'Selling price must be at least 0'),
+    mrp: z.number().min(0, 'MRP must be at least 0'),
+    weight_value: z.number().min(0, 'Weight must be positive'),
+    weight_unit: z.string().min(1, 'Weight unit is required'),
+    stock: z.number().int().min(0, 'Stock must be at least 0'),
+  })).optional().default([]),
 })
 
 export type ProductSchema = z.infer<typeof productSchema>

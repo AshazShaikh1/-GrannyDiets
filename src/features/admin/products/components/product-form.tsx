@@ -1,9 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
+import { Plus, Trash2 } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -24,11 +25,16 @@ export function ProductForm({ initialData, initialImages = [], categories }: Pro
   const [error, setError] = React.useState<string>()
   const [images, setImages] = React.useState<ProductImage[]>(initialImages)
 
-  const { register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue } = useForm<ProductSchema>({
+  const { register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue, control } = useForm<ProductSchema>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData || {
-      name: '', slug: '', category_id: '', mrp: 0, selling_price: 0, stock: 0, is_featured: false, is_active: true
+      name: '', slug: '', category_id: '', mrp: 0, selling_price: 0, stock: 0, is_featured: false, is_active: true, variants: []
     }
+  })
+
+  const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({
+    control,
+    name: 'variants'
   })
 
   // Auto-generate slug from name
@@ -114,6 +120,63 @@ export function ProductForm({ initialData, initialImages = [], categories }: Pro
             <Input type="number" error={!!errors.stock} {...register('stock', { valueAsNumber: true })} />
           </div>
         </div>
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface p-6 shadow-sm space-y-6">
+        <div className="flex items-center justify-between border-b border-border pb-4">
+          <h2 className="text-lg font-semibold text-text-primary">Product Variants</h2>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={() => appendVariant({ name: '', selling_price: 0, mrp: 0, weight_value: 0, weight_unit: 'g', stock: 0 })}
+          >
+            <Plus className="h-4 w-4 mr-2" /> Add Variant
+          </Button>
+        </div>
+        
+        {variantFields.length === 0 ? (
+          <p className="text-sm text-text-secondary text-center py-4">No variants added. The default pricing and weight will be used.</p>
+        ) : (
+          <div className="space-y-6">
+            {variantFields.map((field, index) => (
+              <div key={field.id} className="grid grid-cols-1 gap-4 sm:grid-cols-6 p-4 border border-border rounded-lg bg-background relative">
+                <div className="sm:col-span-6 flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-semibold text-text-primary">Variant {index + 1}</h3>
+                  <button type="button" onClick={() => removeVariant(index)} className="text-error hover:text-error/80">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+                
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-xs font-medium text-text-secondary">Name (e.g. Large Jar)</label>
+                  <Input {...register(`variants.${index}.name` as const)} />
+                  {errors.variants?.[index]?.name && <p className="text-xs text-error">{errors.variants[index]?.name?.message}</p>}
+                </div>
+                <div className="space-y-2 sm:col-span-1">
+                  <label className="text-xs font-medium text-text-secondary">Weight Val</label>
+                  <Input type="number" step="0.1" {...register(`variants.${index}.weight_value` as const, { valueAsNumber: true })} />
+                </div>
+                <div className="space-y-2 sm:col-span-1">
+                  <label className="text-xs font-medium text-text-secondary">Unit</label>
+                  <Input {...register(`variants.${index}.weight_unit` as const)} />
+                </div>
+                <div className="space-y-2 sm:col-span-1">
+                  <label className="text-xs font-medium text-text-secondary">Selling Price</label>
+                  <Input type="number" step="0.01" {...register(`variants.${index}.selling_price` as const, { valueAsNumber: true })} />
+                </div>
+                <div className="space-y-2 sm:col-span-1">
+                  <label className="text-xs font-medium text-text-secondary">MRP</label>
+                  <Input type="number" step="0.01" {...register(`variants.${index}.mrp` as const, { valueAsNumber: true })} />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-xs font-medium text-text-secondary">Stock</label>
+                  <Input type="number" {...register(`variants.${index}.stock` as const, { valueAsNumber: true })} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-surface p-6 shadow-sm space-y-6">

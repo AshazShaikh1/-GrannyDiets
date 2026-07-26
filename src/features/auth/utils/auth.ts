@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
-export async function requireUser() {
+async function requireUser() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -15,13 +15,6 @@ export async function requireUser() {
 export async function requireAdmin() {
   const user = await requireUser()
   const supabase = await createClient()
-  
-  if (process.env.NODE_ENV === 'development') {
-    // Automatically promote the logged-in user to admin during local development
-    // This allows both route access and bypasses RLS policies correctly.
-    await supabase.from('profiles').update({ role: 'admin' }).eq('id', user.id)
-    return user
-  }
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -29,9 +22,9 @@ export async function requireAdmin() {
     .eq('id', user.id)
     .single()
     
-  if (!profile || profile.role !== 'admin') {
+  if (!profile || (profile.role !== 'admin' && profile.role !== 'dev')) {
     redirect('/dashboard') // Or some unauthorized page
   }
   
-  return user
+  return { ...user, role: profile.role }
 }

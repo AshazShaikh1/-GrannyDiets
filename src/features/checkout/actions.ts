@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { checkoutSchema, CheckoutFormData } from './schema'
 import { calculateShipping } from '@/utils/pricing'
+import crypto from 'crypto'
+
 
 export async function createOrderAction(
   formData: CheckoutFormData,
@@ -21,7 +23,9 @@ export async function createOrderAction(
     const validatedData = checkoutSchema.parse(formData)
     
     // 3. Fetch real products from DB to prevent client manipulation
-    const productIds = cartItems.map((item) => item.id)
+    const productIds = cartItems.map((item: any) => item.productId || item.id)
+    const variantIds = cartItems.map((item: any) => item.variantId).filter(Boolean)
+    
     const { data: dbProducts, error: productsError } = await supabase
       .from('products')
       .select('id, name, selling_price, stock, is_active')
@@ -29,32 +33,60 @@ export async function createOrderAction(
 
     if (productsError) throw new Error('Database failure while fetching products.')
     if (!dbProducts || dbProducts.length === 0) throw new Error('Products not found.')
+    
+    let dbVariants: any[] = []
+    if (variantIds.length > 0) {
+      const { data: variantsData, error: variantsError } = await supabase
+        .from('product_variants')
+        .select('id, product_id, name, selling_price, stock')
+        .in('id', variantIds)
+        
+      if (!variantsError && variantsData) {
+        dbVariants = variantsData
+      }
+    }
 
     // 4. Validate stock and activity, calculate totals
     let serverSubtotal = 0
     const orderItemsToInsert = []
 
-    for (const clientItem of cartItems) {
-      const dbProduct = dbProducts.find((p) => p.id === clientItem.id)
+    for (const clientItem of cartItems as any[]) {
+      const actualProductId = clientItem.productId || clientItem.id
+      const dbProduct = dbProducts.find((p) => p.id === actualProductId)
       
       if (!dbProduct) {
-        return { success: false, error: `Product ID ${clientItem.id} is invalid.` }
+        return { success: false, error: `Product ID ${actualProductId} is invalid.` }
       }
       
       if (!dbProduct.is_active) {
         return { success: false, error: `${dbProduct.name} is currently unavailable.` }
       }
 
-      if (dbProduct.stock < clientItem.quantity) {
-        return { success: false, error: `Only ${dbProduct.stock} items left in stock for ${dbProduct.name}.` }
+      let price = dbProduct.selling_price
+      let stock = dbProduct.stock
+      let variantName = null
+
+      if (clientItem.variantId) {
+        const dbVariant = dbVariants.find(v => v.id === clientItem.variantId)
+        if (dbVariant) {
+          price = dbVariant.selling_price
+          stock = dbVariant.stock
+          variantName = dbVariant.name
+        }
       }
 
-      serverSubtotal += dbProduct.selling_price * clientItem.quantity
+      if (stock < clientItem.quantity) {
+        return { success: false, error: `Only ${stock} items left in stock for ${dbProduct.name}${variantName ? ` - ${variantName}` : ''}.` }
+      }
+
+      serverSubtotal += price * clientItem.quantity
 
       orderItemsToInsert.push({
         product_id: dbProduct.id,
+        variant_id: clientItem.variantId || null,
+        variant_name: variantName,
         quantity: clientItem.quantity,
-        price_at_time: dbProduct.selling_price,
+        price_at_time: price,
       })
     }
 
@@ -107,6 +139,50 @@ export async function createOrderAction(
 
     if (orderError) throw new Error('Failed to create order.')
 
+    // Add Razorpay Order Creation
+    let razorpayOrderId = null;
+
+    if (validatedData.payment_method === 'razorpay') {
+      const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'dummy_key';
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || 'dummy_secret';
+      
+      const authHeader = `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString('base64')}`;
+
+      const res = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader
+        },
+        body: JSON.stringify({
+          amount: Math.round(finalTotal * 100), // amount in paise
+          currency: 'INR',
+          receipt: order.id
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Razorpay API Error:", errorData);
+        throw new Error('Failed to create Razorpay order');
+      }
+
+      const rzpOrder = await res.json();
+      razorpayOrderId = rzpOrder.id;
+    }
+
+    // Insert into payments table
+    const { error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        order_id: order.id,
+        amount: finalTotal,
+        status: 'pending',
+        razorpay_order_id: razorpayOrderId
+      })
+      
+    if (paymentError) throw new Error('Failed to create payment record.')
+
     // 7. Insert Order Items
     const itemsWithOrderId = orderItemsToInsert.map(item => ({
       ...item,
@@ -129,7 +205,7 @@ export async function createOrderAction(
       })
     }
 
-    return { success: true, orderId: order.id }
+    return { success: true, orderId: order.id, razorpayOrderId, amount: finalTotal }
 
   } catch (error: any) {
     console.error('Order creation error:', error)
@@ -137,5 +213,52 @@ export async function createOrderAction(
       success: false, 
       error: error.message || 'An unknown error occurred while placing your order.' 
     }
+  }
+}
+
+export async function verifyRazorpayPaymentAction(
+  razorpay_payment_id: string,
+  razorpay_order_id: string,
+  razorpay_signature: string
+) {
+  try {
+    const supabase = await createClient()
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'dummy_secret')
+      .update(body.toString())
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      return { success: false, error: 'Invalid payment signature' };
+    }
+
+    // Update payment record
+    const { error: paymentError } = await supabase
+      .from('payments')
+      .update({
+        status: 'completed',
+        razorpay_payment_id,
+        razorpay_signature
+      })
+      .eq('razorpay_order_id', razorpay_order_id);
+
+    if (paymentError) throw new Error('Failed to update payment status');
+
+    // Update order status
+    const { data: payment } = await supabase.from('payments').select('order_id').eq('razorpay_order_id', razorpay_order_id).single();
+    if (payment) {
+      await supabase
+        .from('orders')
+        .update({ status: 'processing' })
+        .eq('id', payment.order_id)
+    }
+
+    return { success: true };
+
+  } catch (error: any) {
+    console.error('Payment verification error:', error);
+    return { success: false, error: error.message };
   }
 }

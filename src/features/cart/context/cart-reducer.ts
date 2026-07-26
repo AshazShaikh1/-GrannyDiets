@@ -1,5 +1,8 @@
 export type CartItem = {
-  id: string
+  id: string // This will now act as a unique cart item ID (e.g. productId_variantId)
+  productId: string
+  variantId?: string
+  variantName?: string
   name: string
   slug: string
   image: string
@@ -13,7 +16,7 @@ export type CartState = {
 }
 
 export type CartAction =
-  | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity'> & { quantity?: number } }
+  | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity' | 'id'> & { quantity?: number; id?: string } }
   | { type: 'REMOVE_ITEM'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'CLEAR_CART' }
@@ -28,7 +31,9 @@ export const initialState: CartState = {
 export function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD_ITEM': {
-      const existingItemIndex = state.items.findIndex((i) => i.id === action.payload.id)
+      // Generate a unique ID if one isn't provided. This allows variants to exist separately.
+      const uniqueId = action.payload.id || `${action.payload.productId}${action.payload.variantId ? `_${action.payload.variantId}` : ''}`
+      const existingItemIndex = state.items.findIndex((i) => i.id === uniqueId)
       const quantityToAdd = action.payload.quantity || 1
 
       if (existingItemIndex > -1) {
@@ -39,7 +44,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
 
       return {
         ...state,
-        items: [...state.items, { ...action.payload, quantity: quantityToAdd }],
+        items: [...state.items, { ...action.payload, id: uniqueId, quantity: quantityToAdd } as CartItem],
         isOpen: true,
       }
     }

@@ -2,13 +2,26 @@
 
 import * as React from 'react'
 import { Menu, UserCircle } from 'lucide-react'
+import Link from 'next/link'
 
-export function TopNav() {
+interface TopNavProps {
+  onMenuClick?: () => void
+}
+
+export function TopNav({ onMenuClick }: TopNavProps) {
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-6 sm:justify-end">
-      <button className="sm:hidden text-text-secondary hover:text-text-primary">
-        <Menu className="h-6 w-6" />
-      </button>
+      <div className="flex items-center gap-4 sm:hidden">
+        <button 
+          onClick={onMenuClick}
+          className="text-text-secondary hover:text-text-primary"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+        <Link href="/admin/dashboard" className="text-xl font-bold text-primary">
+          Granny
+        </Link>
+      </div>
       
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">

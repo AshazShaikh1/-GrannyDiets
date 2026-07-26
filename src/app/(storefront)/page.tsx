@@ -8,19 +8,25 @@ import { TrustBadge } from '@/features/storefront/components/trust-badge'
 import { ProductCard } from '@/features/storefront/components/product-card'
 import { ScrollAnimate } from '@/components/scroll-animate'
 
-async function getFeaturedProducts() {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('products')
-    .select(`
-      id, name, slug, mrp, selling_price, weight_value, weight_unit,
-      product_images (image_url)
-    `)
-    .eq('is_active', true)
-    .eq('is_featured', true)
-    .limit(4)
-  return data || []
-}
+import { supabasePublic } from '@/lib/supabase/public'
+import { unstable_cache } from 'next/cache'
+
+const getFeaturedProducts = unstable_cache(
+  async () => {
+    const { data } = await supabasePublic
+      .from('products')
+      .select(`
+        id, name, slug, mrp, selling_price, weight_value, weight_unit,
+        product_images (image_url)
+      `)
+      .eq('is_active', true)
+      .eq('is_featured', true)
+      .limit(4)
+    return data || []
+  },
+  ['featured-products'],
+  { revalidate: 60, tags: ['products'] }
+)
 
 export default async function HomePage() {
   const featuredProducts = await getFeaturedProducts()
@@ -117,21 +123,22 @@ export default async function HomePage() {
       <section className="py-20 bg-primary">
         <ScrollAnimate delay={300}>
         <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="lg:w-1/2 relative aspect-square w-full max-w-md mx-auto">
+          <div className="flex flex-col gap-12">
+            <div className="w-full flex justify-center">
               <Image
                 src="/images/home-about.png"
                 alt="About Granny Diets"
-                fill
-                className="object-cover rounded-2xl shadow-xl border border-border"
+                width={800}
+                height={500}
+                className="w-full max-w-4xl h-auto rounded-2xl shadow-xl border border-border"
               />
             </div>
-            <div className="lg:w-1/2 space-y-6">
+            <div className="w-full max-w-4xl mx-auto text-center space-y-6">
               <h2 className="text-3xl font-bold text-white">Our Story</h2>
               <p className="text-lg text-white/90 leading-relaxed">
                 What started as a small kitchen experiment to preserve our grandmother's legendary recipes has grown into a beloved brand. We believe that true flavor comes from patience, high-quality ingredients, and recipes that have stood the test of time.
               </p>
-              <ul className="space-y-3">
+              <ul className="flex flex-wrap justify-center gap-6 pt-4">
                 <li className="flex items-center gap-3 text-white/90">
                   <div className="rounded-full bg-white/20 p-1 text-white"><ShieldCheck className="h-4 w-4" /></div>
                   Handpicked ingredients
@@ -145,9 +152,11 @@ export default async function HomePage() {
                   Zero chemical additives
                 </li>
               </ul>
-              <Link href="/about" className="inline-block mt-4">
-                <Button variant="ghost" className="bg-white text-black hover:bg-white/90 border-transparent shadow-sm">Read More</Button>
-              </Link>
+              <div className="pt-4">
+                <Link href="/about" className="inline-block mt-4">
+                  <Button variant="ghost" className="bg-white text-black hover:bg-white/90 border-transparent shadow-sm">Read More</Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

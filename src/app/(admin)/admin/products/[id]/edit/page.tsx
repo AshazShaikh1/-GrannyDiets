@@ -10,7 +10,7 @@ export default async function EditProductPage({ params }: { params: { id: string
   
   const { data: product } = await supabase
     .from('products')
-    .select('*')
+    .select('*, product_variants(*)')
     .eq('id', params.id)
     .single()
 
@@ -28,7 +28,7 @@ export default async function EditProductPage({ params }: { params: { id: string
     <div className="space-y-6 max-w-4xl">
       <PageHeader title="Edit Product" description={`Update details for ${product.name}.`} />
       <ProductForm 
-        initialData={product} 
+        initialData={{...product, variants: product.product_variants || []}} 
         initialImages={images || []}
         categories={categories || []} 
       />

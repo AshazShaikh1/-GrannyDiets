@@ -18,7 +18,7 @@ export function calculateCartTotal(subtotal: number, shippingCost: number = 0): 
 }
 
 export const FREE_SHIPPING_THRESHOLD = 500
-export const STANDARD_SHIPPING_COST = 50
+const STANDARD_SHIPPING_COST = 50
 
 export function calculateShipping(subtotal: number): number {
   if (subtotal >= FREE_SHIPPING_THRESHOLD) {

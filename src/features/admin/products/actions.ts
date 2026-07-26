@@ -49,6 +49,21 @@ export async function createProductAction(data: ProductSchema, images: ProductIm
     if (imagesError) return { error: 'Product created, but images failed to save' }
   }
 
+  // 3. Insert Variants
+  if (parsed.data.variants && parsed.data.variants.length > 0) {
+    const variantsToInsert = parsed.data.variants.map(v => ({
+      product_id: product.id,
+      name: v.name,
+      selling_price: v.selling_price,
+      mrp: v.mrp,
+      weight_value: v.weight_value,
+      weight_unit: v.weight_unit,
+      stock: v.stock,
+    }))
+    const { error: variantError } = await supabase.from('product_variants').insert(variantsToInsert)
+    if (variantError) return { error: 'Product created, but variants failed to save' }
+  }
+
   revalidatePath('/admin/products')
   return { success: true, productId: product.id }
 }
@@ -95,6 +110,23 @@ export async function updateProductAction(id: string, data: ProductSchema, image
     }))
     const { error: imagesError } = await supabase.from('product_images').insert(imagesToInsert)
     if (imagesError) return { error: 'Product updated, but images failed to sync' }
+  }
+
+  // Handle variants: delete existing and re-insert
+  await supabase.from('product_variants').delete().eq('product_id', id)
+  
+  if (parsed.data.variants && parsed.data.variants.length > 0) {
+    const variantsToInsert = parsed.data.variants.map(v => ({
+      product_id: id,
+      name: v.name,
+      selling_price: v.selling_price,
+      mrp: v.mrp,
+      weight_value: v.weight_value,
+      weight_unit: v.weight_unit,
+      stock: v.stock,
+    }))
+    const { error: variantError } = await supabase.from('product_variants').insert(variantsToInsert)
+    if (variantError) return { error: 'Product updated, but variants failed to sync' }
   }
 
   revalidatePath('/admin/products')

@@ -3,41 +3,48 @@ import { createClient } from '@/lib/supabase/server'
 import { ShopFilters } from '@/features/storefront/components/shop-filters'
 import { ProductCard } from '@/features/storefront/components/product-card'
 import { StorefrontEmptyState } from '@/features/storefront/components/empty-state'
+import { supabasePublic } from '@/lib/supabase/public'
+import { unstable_cache } from 'next/cache'
 
-async function getCategories() {
-  const supabase = await createClient()
-  const { data } = await supabase.from('categories').select('id, name').order('name')
-  return data || []
-}
+const getCategories = unstable_cache(
+  async () => {
+    const { data } = await supabasePublic.from('categories').select('id, name').order('name')
+    return data || []
+  },
+  ['shop-categories'],
+  { revalidate: 60, tags: ['categories'] }
+)
 
-async function getProducts(query: string, categoryId: string) {
-  const supabase = await createClient()
-  
-  let dbQuery = supabase
-    .from('products')
-    .select(`
-      id, name, slug, mrp, selling_price, weight_value, weight_unit,
-      product_images (image_url)
-    `)
-    .eq('is_active', true)
+const getProducts = unstable_cache(
+  async (query: string, categoryId: string) => {
+    let dbQuery = supabasePublic
+      .from('products')
+      .select(`
+        id, name, slug, mrp, selling_price, weight_value, weight_unit,
+        product_images (image_url)
+      `)
+      .eq('is_active', true)
+      
+    if (query) {
+      dbQuery = dbQuery.ilike('name', `%${query}%`)
+    }
     
-  if (query) {
-    dbQuery = dbQuery.ilike('name', `%${query}%`)
-  }
-  
-  if (categoryId && categoryId !== 'all') {
-    dbQuery = dbQuery.eq('category_id', categoryId)
-  }
-  
-  const { data, error } = await dbQuery.order('created_at', { ascending: false })
-  
-  if (error) {
-    console.error('Error fetching products:', error)
-    return []
-  }
-  
-  return data || []
-}
+    if (categoryId && categoryId !== 'all') {
+      dbQuery = dbQuery.eq('category_id', categoryId)
+    }
+    
+    const { data, error } = await dbQuery.order('created_at', { ascending: false })
+    
+    if (error) {
+      console.error('Error fetching products:', error)
+      return []
+    }
+    
+    return data || []
+  },
+  ['shop-products'],
+  { revalidate: 60, tags: ['products'] }
+)
 
 export default async function ShopPage({
   searchParams,

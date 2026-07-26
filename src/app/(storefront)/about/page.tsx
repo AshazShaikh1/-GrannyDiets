@@ -65,7 +65,7 @@ export default function AboutPage() {
             </p>
 
             <p>
-              Three years ago, two friends — <strong className="text-text-primary">Ubed and Mudassir</strong> — chose to walk away from well-paid jobs and fast city lives. We came back home with a simple thought in our hearts: <em className="italic font-medium">the taste we grew up with should not disappear.</em> The taste of pickles made patiently, naturally, and with care.
+              Three years ago, <strong className="text-text-primary">Mudassir</strong> chose to walk away from a well-paid job and fast city life. He came back home with a simple thought in his heart: <em className="italic font-medium">the taste he grew up with should not disappear.</em> The taste of pickles made patiently, naturally, and with care.
             </p>
 
             <p>

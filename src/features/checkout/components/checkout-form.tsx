@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 
 import { checkoutSchema, CheckoutFormData } from '../schema'
-import { createOrderAction } from '../actions'
+import { createOrderAction, verifyRazorpayPaymentAction } from '../actions'
 import { useCart } from '@/features/cart/context/cart-context'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -108,16 +108,61 @@ export function CheckoutForm({ savedAddresses }: CheckoutFormProps) {
     }
 
     if (result.success && result.orderId) {
-      toast.success('Order placed successfully!')
-      // Clear cart only on success
-      clearCart()
-      
       if (data.payment_method === 'razorpay') {
-        // Prepare for Razorpay (Phase 8) - currently just redirect to success
-        router.push(`/checkout/success?order_id=${result.orderId}`)
+        if (!result.razorpayOrderId) {
+           setError('Failed to initiate Razorpay checkout.');
+           return;
+        }
+
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'dummy_key',
+          amount: result.amount ? result.amount * 100 : 0, 
+          currency: 'INR',
+          name: 'Granny Diets',
+          description: 'Payment for your order',
+          order_id: result.razorpayOrderId,
+          handler: async function (response: any) {
+            toast.loading('Verifying payment...', { id: 'payment-verification' });
+            const verifyResult = await verifyRazorpayPaymentAction(
+              response.razorpay_payment_id,
+              response.razorpay_order_id,
+              response.razorpay_signature
+            );
+
+            if (verifyResult.success) {
+              toast.success('Order placed successfully!', { id: 'payment-verification' });
+              clearCart();
+              router.push(`/checkout/success?order_id=${result.orderId}`);
+            } else {
+              toast.error('Payment verification failed. Please contact support.', { id: 'payment-verification' });
+              setError('Payment verification failed.');
+            }
+          },
+          prefill: {
+            name: data.address.full_name,
+            contact: data.address.phone,
+          },
+          theme: {
+            color: '#1a472a', // primary color
+          },
+          modal: {
+            ondismiss: function() {
+               toast.error('Payment was cancelled.');
+            }
+          }
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (response: any){
+          toast.error(`Payment Failed: ${response.error.description}`);
+        });
+        rzp.open();
+
       } else {
         // Cash on delivery
-        router.push(`/checkout/success?order_id=${result.orderId}`)
+        toast.success('Order placed successfully!');
+        clearCart();
+        router.push(`/checkout/success?order_id=${result.orderId}`);
       }
     }
   }
