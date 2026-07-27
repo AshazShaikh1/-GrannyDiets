@@ -80,9 +80,9 @@ export function Footer() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-center sm:text-left">
               <span className="font-semibold uppercase tracking-wider text-xs">100% Secure Payment:</span>
-              <div className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-md">
+              <div className="flex flex-wrap justify-center items-center gap-3 bg-white/10 px-3 py-2 rounded-md">
                 <Image src="/images/visa.png" alt="Visa" width={40} height={25} className="h-5 w-auto object-contain rounded-sm"/>
                 <Image src="/images/upi.png" alt="UPI" width={40} height={25} className="h-5 w-auto object-contain rounded-sm"/>
                 <Image src="/images/paypal.png" alt="PayPal" width={40} height={25} className="h-5 w-auto object-contain rounded-sm"/>
