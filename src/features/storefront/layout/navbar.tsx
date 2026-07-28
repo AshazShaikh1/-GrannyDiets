@@ -4,14 +4,16 @@ import * as React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { ShoppingCart, User, Menu, X, ShieldCheck } from 'lucide-react'
+import { ShoppingCart, User, Menu, X, ShieldCheck, LogOut } from 'lucide-react'
 import { useCart } from '@/features/cart/context/cart-context'
+import { logoutAction } from '@/features/auth/actions/auth'
 
 interface NavbarProps {
   isDev?: boolean
+  isLoggedIn?: boolean
 }
 
-export function Navbar({ isDev = false }: NavbarProps) {
+export function Navbar({ isDev = false, isLoggedIn = false }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const pathname = usePathname()
 
@@ -71,9 +73,22 @@ export function Navbar({ isDev = false }: NavbarProps) {
                 Admin Panel
               </Link>
             )}
-            <Link href="/login" className="text-text-secondary hover:text-primary transition-all hover:scale-110 active:scale-95" onClick={() => setIsMobileMenuOpen(false)}>
-              <User className="h-5 w-5" />
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link href="/dashboard" className="text-text-secondary hover:text-primary transition-all hover:scale-110 active:scale-95" onClick={() => setIsMobileMenuOpen(false)} title="Dashboard">
+                  <User className="h-5 w-5" />
+                </Link>
+                <form action={logoutAction}>
+                  <button type="submit" className="text-text-secondary hover:text-primary transition-all hover:scale-110 active:scale-95 cursor-pointer" aria-label="Log Out" title="Log Out">
+                    <LogOut className="h-5 w-5" />
+                  </button>
+                </form>
+              </>
+            ) : (
+              <Link href="/login" className="text-text-secondary hover:text-primary transition-all hover:scale-110 active:scale-95" onClick={() => setIsMobileMenuOpen(false)}>
+                <User className="h-5 w-5" />
+              </Link>
+            )}
             <button 
               className="relative text-text-secondary hover:text-primary transition-all hover:scale-110 active:scale-95 cursor-pointer" 
               onClick={() => {
@@ -127,6 +142,29 @@ export function Navbar({ isDev = false }: NavbarProps) {
                   <ShieldCheck className="h-5 w-5" />
                   Go to Admin Panel
                 </Link>
+              </div>
+            )}
+
+            {isLoggedIn && (
+              <div className="border-t border-border pt-4 mt-2 flex flex-col gap-4">
+                <Link 
+                  href="/dashboard" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-2 text-base font-medium text-text-primary hover:text-primary transition-colors"
+                >
+                  <User className="h-5 w-5" />
+                  My Dashboard
+                </Link>
+                <form action={logoutAction}>
+                  <button 
+                    type="submit" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex w-full items-center gap-2 text-base font-medium text-error hover:text-error/80 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Log Out
+                  </button>
+                </form>
               </div>
             )}
           </nav>

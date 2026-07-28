@@ -28,7 +28,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
     <CartProvider>
       <div className="flex min-h-screen flex-col bg-background font-sans">
         <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-        <Navbar isDev={isDev} />
+        <Navbar isDev={isDev} isLoggedIn={!!user} />
         <main className="flex-1">
           {children}
         </main>
