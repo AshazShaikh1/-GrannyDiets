@@ -37,6 +37,11 @@ export function ProductForm({ initialData, initialImages = [], categories }: Pro
     name: 'variants'
   })
 
+  const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({
+    control,
+    name: 'features'
+  })
+
   // Auto-generate slug from name
   const name = watch('name')
   React.useEffect(() => {
@@ -177,6 +182,81 @@ export function ProductForm({ initialData, initialImages = [], categories }: Pro
             ))}
           </div>
         )}
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface p-6 shadow-sm space-y-6">
+        <h2 className="text-lg font-semibold text-text-primary border-b border-border pb-4">Marketing & Display Details</h2>
+        
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">Rating (0-5)</label>
+            <Input type="number" step="0.1" max="5" min="0" error={!!errors.rating} {...register('rating', { valueAsNumber: true })} />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">Reviews Count</label>
+            <Input type="number" error={!!errors.reviews_count} {...register('reviews_count', { valueAsNumber: true })} />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">Sales Label</label>
+            <Input placeholder="e.g. 🔥 22 sold in last 3 hours" error={!!errors.sales_label} {...register('sales_label')} />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-text-primary">Badges (Comma separated)</label>
+          <Input placeholder="e.g. BestSeller, Vegan, Join Friendly" error={!!errors.badges} {...register('badges')} />
+          {errors.badges && <p className="text-xs text-error">{errors.badges.message as string}</p>}
+        </div>
+
+        <div className="space-y-4 pt-4 border-t border-border">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-text-primary">Circular Features</h3>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={() => appendFeature({ title: '', subtitle: '', icon: 'check' })}
+            >
+              <Plus className="h-4 w-4 mr-2" /> Add Feature
+            </Button>
+          </div>
+          
+          {featureFields.length === 0 ? (
+            <p className="text-sm text-text-secondary">No circular features added.</p>
+          ) : (
+            <div className="space-y-4">
+              {featureFields.map((field, index) => (
+                <div key={field.id} className="flex gap-4 items-start">
+                  <div className="flex-1 space-y-2">
+                    <Input placeholder="Title (e.g. Premium)" {...register(`features.${index}.title` as const)} />
+                    {errors.features?.[index]?.title && <p className="text-xs text-error">{errors.features[index]?.title?.message}</p>}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Input placeholder="Subtitle (e.g. Ingredients)" {...register(`features.${index}.subtitle` as const)} />
+                  </div>
+                  <div className="w-32 space-y-2">
+                    <select 
+                      className="flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
+                      {...register(`features.${index}.icon` as const)}
+                    >
+                      <option value="check">Check</option>
+                      <option value="star">Star</option>
+                      <option value="sun">Sun</option>
+                      <option value="zap">Zap</option>
+                      <option value="leaf">Leaf</option>
+                      <option value="shield">Shield</option>
+                    </select>
+                  </div>
+                  <button type="button" onClick={() => removeFeature(index)} className="text-error hover:text-error/80 mt-2 p-2">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border border-border bg-surface p-6 shadow-sm space-y-6">

@@ -31,6 +31,11 @@ export async function createProductAction(data: ProductSchema, images: ProductIm
       stock: parsed.data.stock,
       is_featured: parsed.data.is_featured,
       is_active: parsed.data.is_active,
+      rating: parsed.data.rating,
+      reviews_count: parsed.data.reviews_count,
+      sales_label: parsed.data.sales_label,
+      badges: parsed.data.badges,
+      features: parsed.data.features,
     })
     .select('id')
     .single()
@@ -93,6 +98,11 @@ export async function updateProductAction(id: string, data: ProductSchema, image
       stock: parsed.data.stock,
       is_featured: parsed.data.is_featured,
       is_active: parsed.data.is_active,
+      rating: parsed.data.rating,
+      reviews_count: parsed.data.reviews_count,
+      sales_label: parsed.data.sales_label,
+      badges: parsed.data.badges,
+      features: parsed.data.features,
     })
     .eq('id', id)
 

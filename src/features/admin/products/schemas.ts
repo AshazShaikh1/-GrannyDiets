@@ -23,6 +23,23 @@ export const productSchema = z.object({
     weight_unit: z.string().min(1, 'Weight unit is required'),
     stock: z.number().int().min(0, 'Stock must be at least 0'),
   })).optional().default([]),
+  rating: z.number().min(0).max(5).default(4.5),
+  reviews_count: z.number().int().min(0).default(0),
+  sales_label: z.string().optional().default(''),
+  badges: z.union([
+    z.string(),
+    z.array(z.string())
+  ]).transform(val => {
+    if (typeof val === 'string') {
+      return val.split(',').map(s => s.trim()).filter(Boolean)
+    }
+    return val
+  }).default([]),
+  features: z.array(z.object({
+    title: z.string().min(1, 'Title is required'),
+    subtitle: z.string().optional(),
+    icon: z.string().default('check')
+  })).default([]),
 })
 
 export type ProductSchema = z.infer<typeof productSchema>

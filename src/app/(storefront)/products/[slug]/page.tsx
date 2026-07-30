@@ -11,6 +11,15 @@ import { StorefrontEmptyState } from '@/features/storefront/components/empty-sta
 import { ProductDetailsTabs } from '@/features/storefront/components/product-details-tabs'
 import { Star, ShieldCheck, CheckCircle2, Sun, Zap, MapPin, Leaf } from 'lucide-react'
 
+const IconMap: Record<string, React.ElementType> = {
+  check: CheckCircle2,
+  star: Star,
+  sun: Sun,
+  zap: Zap,
+  leaf: Leaf,
+  shield: ShieldCheck,
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const product = await getProduct(slug)
@@ -94,27 +103,36 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <div className="flex items-center gap-4 mt-3">
               <div className="flex items-center gap-1 text-primary">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-5 h-5 fill-current" />
+                  <Star key={star} className={`w-5 h-5 ${star <= Math.round(product.rating ?? 4.5) ? 'fill-current' : 'text-gray-300'}`} />
                 ))}
-                <span className="text-text-primary ml-2 font-medium">4.7 | 1824 Reviews</span>
+                <span className="text-text-primary ml-2 font-medium">{product.rating ?? 4.5} | {product.reviews_count ?? 0} Reviews</span>
               </div>
             </div>
             
-            <div className="flex items-center gap-3 mt-4">
-              <span className="bg-[#232F3E] text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
-                <span className="text-[#FF9900]">a</span> BestSeller
-              </span>
-              <div className="flex items-center gap-2 text-xs font-semibold text-text-primary border border-border px-2 py-1 rounded">
-                <ShieldCheck className="w-4 h-4 text-secondary" /> Join Friendly
+            {product.badges && product.badges.length > 0 && (
+              <div className="flex items-center gap-3 mt-4 flex-wrap">
+                {product.badges.map((badge: string, idx: number) => {
+                  if (badge.toLowerCase() === 'bestseller') {
+                    return (
+                      <span key={idx} className="bg-[#232F3E] text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                        <span className="text-[#FF9900]">a</span> {badge}
+                      </span>
+                    )
+                  }
+                  return (
+                    <div key={idx} className="flex items-center gap-2 text-xs font-semibold text-text-primary border border-border px-2 py-1 rounded">
+                      <ShieldCheck className="w-4 h-4 text-secondary" /> {badge}
+                    </div>
+                  )
+                })}
               </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-text-primary border border-border px-2 py-1 rounded">
-                <Leaf className="w-4 h-4 text-secondary" /> Vegan
-              </div>
-            </div>
+            )}
             
-            <p className="text-sm font-medium text-error mt-4 flex items-center gap-1">
-              🔥 22 sold in last 3 hours
-            </p>
+            {product.sales_label && (
+              <p className="text-sm font-medium text-error mt-4 flex items-center gap-1">
+                {product.sales_label}
+              </p>
+            )}
           </div>
           <ProductPurchaseSection 
             product={{
@@ -126,38 +144,31 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               weight_value: product.weight_value,
               weight_unit: product.weight_unit,
               stock: product.stock,
+              shelf_life: product.shelf_life,
               image: product.product_images?.[0]?.image_url || '/images/placeholder.png'
             }}
             variants={product.product_variants || []}
           />
           
           {/* Circular Badges */}
-          <div className="grid grid-cols-4 gap-2 mt-8 py-6 border-y border-border">
-            <div className="flex flex-col items-center text-center gap-2">
-              <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center bg-surface">
-                <CheckCircle2 className="w-6 h-6 text-text-primary" />
-              </div>
-              <span className="text-xs font-medium text-text-secondary">Hygienically<br/>Handmade</span>
+          {product.features && product.features.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 py-6 border-y border-border">
+              {product.features.map((feature: any, idx: number) => {
+                const Icon = IconMap[feature.icon] || CheckCircle2
+                return (
+                  <div key={idx} className="flex flex-col items-center text-center gap-2">
+                    <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center bg-surface">
+                      <Icon className="w-6 h-6 text-text-primary" />
+                    </div>
+                    <span className="text-xs font-medium text-text-secondary">
+                      {feature.title}
+                      {feature.subtitle && <><br/>{feature.subtitle}</>}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
-            <div className="flex flex-col items-center text-center gap-2">
-              <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center bg-surface">
-                <Star className="w-6 h-6 text-text-primary" />
-              </div>
-              <span className="text-xs font-medium text-text-secondary">Premium<br/>Ingredients</span>
-            </div>
-            <div className="flex flex-col items-center text-center gap-2">
-              <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center bg-surface">
-                <Sun className="w-6 h-6 text-text-primary" />
-              </div>
-              <span className="text-xs font-medium text-text-secondary">Sun-dried</span>
-            </div>
-            <div className="flex flex-col items-center text-center gap-2">
-              <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center bg-surface">
-                <Zap className="w-6 h-6 text-text-primary" />
-              </div>
-              <span className="text-xs font-medium text-text-secondary">No Chemical<br/>Preservatives</span>
-            </div>
-          </div>
+          )}
           
           <div className="mt-6 bg-[#2B2B2B] rounded-lg p-4 flex justify-between items-center text-white">
             <span className="font-bold text-lg">My Secret Ingredient is Chemical</span>

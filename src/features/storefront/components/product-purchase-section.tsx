@@ -28,6 +28,7 @@ interface ProductPurchaseProps {
     weight_value: number
     weight_unit: string
     stock: number
+    shelf_life?: string | null
     image: string
   }
   variants: ProductVariant[]
@@ -105,9 +106,11 @@ export function ProductPurchaseSection({ product, variants }: ProductPurchasePro
         )}
       </div>
 
-      <p className="text-sm font-medium text-text-secondary mb-6">
-        Shelf Life : 12 months from the date of packaging
-      </p>
+      {product.shelf_life && (
+        <p className="text-sm font-medium text-text-secondary mb-6">
+          Shelf Life : {product.shelf_life}
+        </p>
+      )}
 
       {/* Variants Grid */}
       <div className="grid grid-cols-2 gap-4 mb-8">
