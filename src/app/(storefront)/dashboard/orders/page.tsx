@@ -6,6 +6,8 @@ import { StatusBadge } from '@/features/admin/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { PackageOpen } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'My Orders | Granny Diets',
 }

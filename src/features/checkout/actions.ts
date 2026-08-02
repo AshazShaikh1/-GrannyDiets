@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { checkoutSchema, CheckoutFormData } from './schema'
 import { calculateShipping } from '@/utils/pricing'
 import crypto from 'crypto'
+import { revalidatePath } from 'next/cache'
 
 
 export async function createOrderAction(
@@ -205,6 +206,12 @@ export async function createOrderAction(
       })
     }
 
+    // 9. Revalidate affected routes
+    revalidatePath('/admin/orders')
+    revalidatePath('/admin/dashboard')
+    revalidatePath('/dashboard')
+    revalidatePath('/dashboard/orders')
+
     return { success: true, orderId: order.id, razorpayOrderId, amount: finalTotal }
 
   } catch (error: any) {
@@ -249,10 +256,21 @@ export async function verifyRazorpayPaymentAction(
     // Update order status
     const { data: payment } = await supabase.from('payments').select('order_id').eq('razorpay_order_id', razorpay_order_id).single();
     if (payment) {
-      await supabase
+      const { error: orderUpdateError } = await supabase
         .from('orders')
         .update({ status: 'processing' })
         .eq('id', payment.order_id)
+        
+      if (orderUpdateError) {
+        console.error('Failed to update order status to processing:', orderUpdateError)
+      }
+
+      revalidatePath('/admin/orders')
+      revalidatePath('/admin/dashboard')
+      revalidatePath('/dashboard')
+      revalidatePath('/dashboard/orders')
+      revalidatePath(`/admin/orders/${payment.order_id}`)
+      revalidatePath(`/dashboard/orders/${payment.order_id}`)
     }
 
     return { success: true };

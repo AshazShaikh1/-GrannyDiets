@@ -1,16 +1,37 @@
+import { createClient } from '@/lib/supabase/server'
 import { Package, ShoppingBag, ShoppingCart, Users } from 'lucide-react'
 
-// Later we will fetch real data from Supabase Server Actions
-const mockStats = [
-  { name: 'Total Products', value: '0', icon: Package, color: 'text-primary' },
-  { name: 'Active Products', value: '0', icon: ShoppingBag, color: 'text-success' },
-  { name: 'Total Orders', value: '0', icon: ShoppingCart, color: 'text-primary' },
-  { name: 'Pending Orders', value: '0', icon: ShoppingCart, color: 'text-warning' },
-  { name: 'Delivered Orders', value: '0', icon: ShoppingCart, color: 'text-success' },
-  { name: 'Total Customers', value: '0', icon: Users, color: 'text-secondary' },
-]
+export const dynamic = 'force-dynamic'
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = await createClient()
+
+  // Fetch counts concurrently
+  const [
+    { count: totalProducts },
+    { count: activeProducts },
+    { count: totalOrders },
+    { count: pendingOrders },
+    { count: deliveredOrders },
+    { count: totalCustomers },
+  ] = await Promise.all([
+    supabase.from('products').select('*', { count: 'exact', head: true }),
+    supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    supabase.from('orders').select('*', { count: 'exact', head: true }),
+    supabase.from('orders').select('*', { count: 'exact', head: true }).in('status', ['pending', 'processing']),
+    supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'delivered'),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'user'),
+  ])
+
+  const stats = [
+    { name: 'Total Products', value: (totalProducts ?? 0).toString(), icon: Package, color: 'text-primary' },
+    { name: 'Active Products', value: (activeProducts ?? 0).toString(), icon: ShoppingBag, color: 'text-success' },
+    { name: 'Total Orders', value: (totalOrders ?? 0).toString(), icon: ShoppingCart, color: 'text-primary' },
+    { name: 'Pending Orders', value: (pendingOrders ?? 0).toString(), icon: ShoppingCart, color: 'text-warning' },
+    { name: 'Delivered Orders', value: (deliveredOrders ?? 0).toString(), icon: ShoppingCart, color: 'text-success' },
+    { name: 'Total Customers', value: (totalCustomers ?? 0).toString(), icon: Users, color: 'text-secondary' },
+  ]
+
   return (
     <div className="space-y-6">
       <div>
@@ -19,7 +40,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {mockStats.map((stat) => {
+        {stats.map((stat) => {
           const Icon = stat.icon
           return (
             <div key={stat.name} className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 shadow-sm">

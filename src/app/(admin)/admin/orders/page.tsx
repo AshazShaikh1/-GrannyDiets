@@ -4,12 +4,14 @@ import { OrderListClient } from '@/features/admin/orders/components/order-list-c
 import { EmptyState } from '@/features/admin/components/empty-state'
 import { ShoppingCart } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function OrdersPage() {
   const supabase = await createClient()
   
   const { data: orders } = await supabase
     .from('orders')
-    .select('*, profiles(full_name)')
+    .select('*, profiles(full_name), payments(status, razorpay_payment_id)')
     .order('created_at', { ascending: false })
 
   return (

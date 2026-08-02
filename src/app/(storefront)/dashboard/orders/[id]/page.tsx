@@ -6,6 +6,8 @@ import { StatusBadge } from '@/features/admin/components/status-badge'
 import { ArrowLeft, MapPin, CreditCard, Package } from 'lucide-react'
 import { calculateShipping, calculateCartTotal } from '@/utils/pricing'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Order Details | Granny Diets',
 }
@@ -140,8 +142,10 @@ export default async function DashboardOrderDetailsPage({ params }: OrderDetails
             </div>
             <div className="p-4 text-sm text-text-secondary">
               <p className="font-semibold text-text-primary mb-1">{address.full_name}</p>
-              <p>{address.address_line_1}</p>
-              {address.address_line_2 && <p>{address.address_line_2}</p>}
+              <p>{address.address_line_1 || address.address_line1}</p>
+              {(address.address_line_2 || address.address_line2) && (
+                <p>{address.address_line_2 || address.address_line2}</p>
+              )}
               <p>{address.city}, {address.state} {address.postal_code}</p>
               <p className="mt-2">📞 {address.phone}</p>
             </div>

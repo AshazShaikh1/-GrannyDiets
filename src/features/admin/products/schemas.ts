@@ -14,6 +14,7 @@ export const productSchema = z.object({
   selling_price: z.number().min(0, 'Selling price must be at least 0'),
   stock: z.number().int().min(0, 'Stock must be at least 0'),
   is_featured: z.boolean(),
+  is_active: z.boolean().default(true),
   variants: z.array(z.object({
     id: z.string().optional(),
     name: z.string().min(1, 'Variant name is required'),
@@ -42,7 +43,8 @@ export const productSchema = z.object({
   })).default([]),
 })
 
-export type ProductSchema = z.infer<typeof productSchema>
+export type ProductInput = z.input<typeof productSchema>
+export type ProductSchema = z.output<typeof productSchema>
 
 export type ProductImage = {
   id?: string

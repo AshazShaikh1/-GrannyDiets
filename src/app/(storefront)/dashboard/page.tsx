@@ -6,6 +6,8 @@ import { ShoppingBag, MapPin, PackageOpen } from 'lucide-react'
 import { StatusBadge } from '@/features/admin/components/status-badge'
 import { Button } from '@/components/ui/button'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardOverviewPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

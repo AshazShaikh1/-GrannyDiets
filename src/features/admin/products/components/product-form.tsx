@@ -9,13 +9,13 @@ import { Plus, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { FormError } from '@/features/auth/components/form-error'
-import { productSchema, type ProductSchema, type ProductImage } from '../schemas'
+import { productSchema, type ProductInput, type ProductSchema, type ProductImage } from '../schemas'
 import { createProductAction, updateProductAction } from '../actions'
 import { ImageUploader } from './image-uploader'
 import { toast } from 'sonner'
 
 interface ProductFormProps {
-  initialData?: ProductSchema & { id: string }
+  initialData?: any
   initialImages?: ProductImage[]
   categories: { id: string, name: string }[]
 }
@@ -25,10 +25,10 @@ export function ProductForm({ initialData, initialImages = [], categories }: Pro
   const [error, setError] = React.useState<string>()
   const [images, setImages] = React.useState<ProductImage[]>(initialImages)
 
-  const { register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue, control } = useForm<ProductSchema>({
-    resolver: zodResolver(productSchema),
+  const { register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue, control } = useForm<ProductInput, any, ProductSchema>({
+    resolver: zodResolver(productSchema) as any,
     defaultValues: initialData || {
-      name: '', slug: '', category_id: '', mrp: 0, selling_price: 0, stock: 0, is_featured: false, is_active: true, variants: []
+      name: '', slug: '', category_id: '', mrp: 0, selling_price: 0, stock: 0, is_featured: false, is_active: true, variants: [], rating: 4.5, reviews_count: 0, sales_label: '', badges: [], features: []
     }
   })
 

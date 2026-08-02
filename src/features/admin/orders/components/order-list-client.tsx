@@ -30,7 +30,7 @@ export function OrderListClient({ orders }: { orders: any[] }) {
           <td className="px-6 py-4">{new Date(o.created_at).toLocaleDateString()}</td>
           <td className="px-6 py-4">₹{o.total_amount}</td>
           <td className="px-6 py-4">
-            <StatusBadge status={o.payment_status} />
+            <StatusBadge status={o.payments?.[0]?.status || o.payment_status || 'pending'} />
             <div className="text-xs text-text-muted mt-1 uppercase">{o.payment_method}</div>
           </td>
           <td className="px-6 py-4">

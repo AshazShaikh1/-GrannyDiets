@@ -6,18 +6,26 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 
-export default async function OrderDetailsPage({ params }: { params: { id: string } }) {
+export const dynamic = 'force-dynamic'
+
+interface OrderDetailsProps {
+  params: Promise<{ id: string }>
+}
+
+export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
+  const { id } = await params
   const supabase = await createClient()
 
   const { data: order } = await supabase
     .from('orders')
-    .select('*, profiles(full_name, email), order_items(*, products(name, selling_price))')
-    .eq('id', params.id)
+    .select('*, profiles(full_name, email), order_items(*, products(name, selling_price)), payments(*)')
+    .eq('id', id)
     .single()
 
   if (!order) notFound()
 
   const shipping = order.shipping_address as any || {}
+  const payment = order.payments?.[0]
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -35,19 +43,26 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold text-text-primary">Customer Details</h2>
+          <h2 className="text-lg font-semibold text-text-primary">Customer & Payment</h2>
           <div className="space-y-1 text-sm text-text-secondary">
             <p><span className="font-medium">Name:</span> {order.profiles?.full_name || 'Guest'}</p>
             <p><span className="font-medium">Email:</span> {order.profiles?.email || 'N/A'}</p>
+            <p><span className="font-medium">Payment Method:</span> <span className="uppercase font-semibold">{order.payment_method}</span></p>
+            <p><span className="font-medium">Payment Status:</span> <span className="capitalize font-semibold">{payment?.status || 'Pending'}</span></p>
+            {payment?.razorpay_payment_id && (
+              <p><span className="font-medium">Payment ID:</span> <span className="font-mono text-xs">{payment.razorpay_payment_id}</span></p>
+            )}
           </div>
         </div>
 
         <div className="rounded-lg border border-border bg-surface p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold text-text-primary">Shipping Address</h2>
           <div className="space-y-1 text-sm text-text-secondary">
-            <p>{shipping.full_name}</p>
-            <p>{shipping.address_line1}</p>
-            {shipping.address_line2 && <p>{shipping.address_line2}</p>}
+            <p className="font-medium text-text-primary">{shipping.full_name}</p>
+            <p>{shipping.address_line_1 || shipping.address_line1}</p>
+            {(shipping.address_line_2 || shipping.address_line2) && (
+              <p>{shipping.address_line_2 || shipping.address_line2}</p>
+            )}
             <p>{shipping.city}, {shipping.state} {shipping.postal_code}</p>
             <p>Phone: {shipping.phone}</p>
           </div>
