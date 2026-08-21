@@ -25,9 +25,10 @@ type SavedAddress = {
 
 interface CheckoutFormProps {
   savedAddresses: SavedAddress[]
+  isLoggedIn: boolean
 }
 
-export function CheckoutForm({ savedAddresses }: CheckoutFormProps) {
+export function CheckoutForm({ savedAddresses, isLoggedIn }: CheckoutFormProps) {
   const { items, clearCart, isHydrated } = useCart()
   const router = useRouter()
   const [error, setError] = React.useState<string | null>(null)
@@ -284,16 +285,18 @@ export function CheckoutForm({ savedAddresses }: CheckoutFormProps) {
               {errors.address?.postal_code && <p className="text-xs text-error">{errors.address.postal_code.message}</p>}
             </div>
 
-            <div className="md:col-span-2 pt-2">
-              <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...register('address.save_address')}
-                  className="rounded border-border text-primary focus:ring-primary"
-                />
-                Save this address for future orders
-              </label>
-            </div>
+            {isLoggedIn && (
+              <div className="md:col-span-2 pt-2">
+                <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    {...register('address.save_address')}
+                    className="rounded border-border text-primary focus:ring-primary"
+                  />
+                  Save this address for future orders
+                </label>
+              </div>
+            )}
           </div>
         )}
       </div>

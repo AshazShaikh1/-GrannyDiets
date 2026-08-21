@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Define protected routes (simple prefix matching)
-  const protectedPrefixes = ['/dashboard', '/profile', '/orders', '/checkout', '/admin']
+  const protectedPrefixes = ['/dashboard', '/profile', '/orders', '/admin']
   const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix))
 
   // Define auth routes (users already logged in shouldn't see these)

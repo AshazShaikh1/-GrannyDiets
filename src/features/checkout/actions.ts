@@ -14,11 +14,8 @@ export async function createOrderAction(
   try {
     const supabase = await createClient()
 
-    // 1. Verify Authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return { success: false, error: 'You must be logged in to place an order.' }
-    }
+    // 1. Verify Authentication (now optional)
+    const { data: { user } } = await supabase.auth.getUser()
 
     // 2. Validate Form Data
     const validatedData = checkoutSchema.parse(formData)
@@ -96,7 +93,7 @@ export async function createOrderAction(
 
     // 5. Optionally save the address if requested and it's new
     let savedAddressId = validatedData.address.id
-    if (validatedData.address.save_address && !savedAddressId) {
+    if (validatedData.address.save_address && !savedAddressId && user) {
       const { data: newAddress, error: addressError } = await supabase
         .from('addresses')
         .insert({
@@ -121,7 +118,7 @@ export async function createOrderAction(
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
-        user_id: user.id,
+        user_id: user?.id || null,
         status: 'pending',
         total_amount: finalTotal,
         payment_method: validatedData.payment_method,

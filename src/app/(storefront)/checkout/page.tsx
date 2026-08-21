@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { CheckoutForm } from '@/features/checkout/components/checkout-form'
 import { OrderSummary } from '@/features/checkout/components/order-summary'
@@ -14,17 +13,17 @@ export default async function CheckoutPage() {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect('/login?redirect=/checkout')
+  let savedAddresses: any[] = []
+  if (user) {
+    const { data } = await supabase
+      .from('addresses')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false })
+    
+    savedAddresses = data || []
   }
-
-  // Fetch user's saved addresses
-  const { data: savedAddresses } = await supabase
-    .from('addresses')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('is_default', { ascending: false })
-    .order('created_at', { ascending: false })
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -33,7 +32,7 @@ export default async function CheckoutPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
         {/* Left Column: Form */}
         <div className="lg:col-span-7 xl:col-span-8">
-          <CheckoutForm savedAddresses={savedAddresses || []} />
+          <CheckoutForm savedAddresses={savedAddresses} isLoggedIn={!!user} />
         </div>
 
         {/* Right Column: Order Summary */}
