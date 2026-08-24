@@ -134,7 +134,7 @@ export async function createOrderAction(
       .select('id')
       .single()
 
-    if (orderError) throw new Error('Failed to create order.')
+    if (orderError) throw new Error(`Failed to create order: ${orderError.message}`)
 
     // Add Razorpay Order Creation
     let razorpayOrderId = null;
