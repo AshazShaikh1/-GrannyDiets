@@ -162,7 +162,7 @@ export async function createOrderAction(
       if (!res.ok) {
         const errorData = await res.json();
         console.error("Razorpay API Error:", errorData);
-        throw new Error('Failed to create Razorpay order');
+        throw new Error(`Razorpay Error: ${errorData.error?.description || 'Failed to create Razorpay order'}`);
       }
 
       const rzpOrder = await res.json();

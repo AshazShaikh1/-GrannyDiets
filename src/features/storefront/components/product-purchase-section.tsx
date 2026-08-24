@@ -126,7 +126,7 @@ export function ProductPurchaseSection({ product, variants }: ProductPurchasePro
           )}
           <div className="text-center">
             <div className="font-bold text-text-primary text-lg">
-              {displayWeightVal ? `${displayWeightVal} ${displayWeightUnit}` : 'Standard'}
+              {displayWeightVal ? `${displayWeightVal} ${displayWeightUnit || ''}`.trim() : 'Standard'}
             </div>
             <div className="text-sm font-semibold text-primary mt-1">
               ₹{product.selling_price} <span className="line-through text-text-muted text-xs">₹{product.mrp}</span>
