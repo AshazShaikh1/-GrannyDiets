@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { checkoutSchema, CheckoutFormData } from './schema'
 import { calculateShipping } from '@/utils/pricing'
 import { revalidatePath } from 'next/cache'
@@ -12,6 +13,7 @@ export async function createOrderAction(
 ) {
   try {
     const supabase = await createClient()
+    const adminSupabase = createAdminClient()
 
     // 1. Verify Authentication (now optional)
     const { data: { user } } = await supabase.auth.getUser()
@@ -93,7 +95,7 @@ export async function createOrderAction(
     // 5. Optionally save the address if requested and it's new
     let savedAddressId = validatedData.address.id
     if (validatedData.address.save_address && !savedAddressId && user) {
-      const { data: newAddress, error: addressError } = await supabase
+      const { data: newAddress, error: addressError } = await adminSupabase
         .from('addresses')
         .insert({
           user_id: user.id,
@@ -114,7 +116,7 @@ export async function createOrderAction(
     }
 
     // 6. Create Order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await adminSupabase
       .from('orders')
       .insert({
         user_id: user?.id || null,
@@ -169,7 +171,7 @@ export async function createOrderAction(
     }
 
     // Insert into payments table
-    const { error: paymentError } = await supabase
+    const { error: paymentError } = await adminSupabase
       .from('payments')
       .insert({
         order_id: order.id,
@@ -186,7 +188,7 @@ export async function createOrderAction(
       order_id: order.id,
     }))
 
-    const { error: itemsError } = await supabase
+    const { error: itemsError } = await adminSupabase
       .from('order_items')
       .insert(itemsWithOrderId)
 
@@ -194,7 +196,7 @@ export async function createOrderAction(
 
     // 8. Deduct Stock (optional but good practice)
     for (const item of orderItemsToInsert) {
-       supabase.rpc('decrement_stock', {
+       adminSupabase.rpc('decrement_stock', {
         row_id: item.product_id,
         amount: item.quantity
       }).then(({ error }) => {
@@ -225,7 +227,7 @@ export async function verifyRazorpayPaymentAction(
   razorpay_signature: string
 ) {
   try {
-    const supabase = await createClient()
+    const adminSupabase = createAdminClient()
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const encoder = new TextEncoder();
@@ -247,7 +249,7 @@ export async function verifyRazorpayPaymentAction(
     }
 
     // Update payment record
-    const { error: paymentError } = await supabase
+    const { error: paymentError } = await adminSupabase
       .from('payments')
       .update({
         status: 'completed',
@@ -259,9 +261,9 @@ export async function verifyRazorpayPaymentAction(
     if (paymentError) throw new Error('Failed to update payment status');
 
     // Update order status
-    const { data: payment } = await supabase.from('payments').select('order_id').eq('razorpay_order_id', razorpay_order_id).single();
+    const { data: payment } = await adminSupabase.from('payments').select('order_id').eq('razorpay_order_id', razorpay_order_id).single();
     if (payment) {
-      const { error: orderUpdateError } = await supabase
+      const { error: orderUpdateError } = await adminSupabase
         .from('orders')
         .update({ status: 'processing' })
         .eq('id', payment.order_id)
