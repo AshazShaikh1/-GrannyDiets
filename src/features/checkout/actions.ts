@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { checkoutSchema, CheckoutFormData } from './schema'
 import { calculateShipping } from '@/utils/pricing'
-import crypto from 'crypto'
 import { revalidatePath } from 'next/cache'
 
 
@@ -144,7 +143,7 @@ export async function createOrderAction(
       const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'dummy_key';
       const keySecret = process.env.RAZORPAY_KEY_SECRET || 'dummy_secret';
       
-      const authHeader = `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString('base64')}`;
+      const authHeader = `Basic ${btoa(`${keyId}:${keySecret}`)}`;
 
       const res = await fetch('https://api.razorpay.com/v1/orders', {
         method: 'POST',
@@ -229,10 +228,19 @@ export async function verifyRazorpayPaymentAction(
     const supabase = await createClient()
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'dummy_secret')
-      .update(body.toString())
-      .digest('hex');
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(process.env.RAZORPAY_KEY_SECRET || 'dummy_secret'),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(body.toString()));
+    const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
 
     if (expectedSignature !== razorpay_signature) {
       return { success: false, error: 'Invalid payment signature' };
