@@ -3,6 +3,7 @@ import { z } from 'zod'
 export const addressSchema = z.object({
   id: z.string().optional(),
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
   phone: z.string().regex(/^[0-9]{10}$/, 'Invalid phone number, must be 10 digits'),
   address_line_1: z.string().min(5, 'Address is too short'),
   address_line_2: z.string().optional(),

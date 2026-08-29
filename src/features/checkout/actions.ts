@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkoutSchema, CheckoutFormData } from './schema'
 import { calculateShipping } from '@/utils/pricing'
+import { sendOrderNotification } from '@/lib/email'
 import { revalidatePath } from 'next/cache'
 
 
@@ -131,6 +132,7 @@ export async function createOrderAction(
           city: validatedData.address.city,
           state: validatedData.address.state,
           postal_code: validatedData.address.postal_code,
+          email: validatedData.address.email || undefined,
         }
       })
       .select('id')
@@ -210,6 +212,20 @@ export async function createOrderAction(
     revalidatePath('/dashboard')
     revalidatePath('/dashboard/orders')
 
+    // 10. Send Email Notification (Only for COD/Direct since Razorpay is verified later)
+    if (validatedData.payment_method !== 'razorpay') {
+      const emailItems = orderItemsToInsert.map(item => {
+        const p = dbProducts.find(prod => prod.id === item.product_id);
+        return {
+          productName: p?.name || 'Unknown Product',
+          variantName: item.variant_name,
+          quantity: item.quantity,
+          price: item.price_at_time
+        }
+      });
+      await sendOrderNotification(order.id, finalTotal, validatedData.payment_method, validatedData.address, emailItems);
+    }
+
     return { success: true, orderId: order.id, razorpayOrderId, amount: finalTotal }
 
   } catch (error: any) {
@@ -278,6 +294,47 @@ export async function verifyRazorpayPaymentAction(
       revalidatePath('/dashboard/orders')
       revalidatePath(`/admin/orders/${payment.order_id}`)
       revalidatePath(`/dashboard/orders/${payment.order_id}`)
+      
+      // Fetch order details for the email
+      const { data: orderDetails } = await adminSupabase
+        .from('orders')
+        .select('total_amount, payment_method, shipping_address')
+        .eq('id', payment.order_id)
+        .single();
+        
+      const { data: orderItems } = await adminSupabase
+        .from('order_items')
+        .select('quantity, price_at_time, variant_name, product_id')
+        .eq('order_id', payment.order_id);
+        
+      let emailItems: any[] = [];
+      if (orderItems && orderItems.length > 0) {
+        const { data: products } = await adminSupabase
+          .from('products')
+          .select('id, name')
+          .in('id', orderItems.map((i: any) => i.product_id));
+          
+        emailItems = orderItems.map((item: any) => {
+          const p = products?.find((prod: any) => prod.id === item.product_id);
+          return {
+            productName: p?.name || 'Unknown Product',
+            variantName: item.variant_name,
+            quantity: item.quantity,
+            price: item.price_at_time
+          }
+        });
+      }
+        
+      if (orderDetails) {
+        // Send Email Notification on successful Razorpay payment
+        await sendOrderNotification(
+          payment.order_id, 
+          orderDetails.total_amount, 
+          orderDetails.payment_method, 
+          orderDetails.shipping_address,
+          emailItems
+        );
+      }
     }
 
     return { success: true };

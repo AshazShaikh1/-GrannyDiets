@@ -66,6 +66,7 @@ export function CheckoutForm({ savedAddresses, isLoggedIn }: CheckoutFormProps) 
         id: undefined,
         full_name: '',
         phone: '',
+        email: '',
         address_line_1: '',
         address_line_2: '',
         city: '',
@@ -225,8 +226,19 @@ export function CheckoutForm({ savedAddresses, isLoggedIn }: CheckoutFormProps) 
               />
               {errors.address?.full_name && <p className="text-xs text-error">{errors.address.full_name.message}</p>}
             </div>
-            
+
             <div className="space-y-1">
+              <label className="text-sm font-medium text-text-secondary">Email Address (Optional)</label>
+              <input
+                type="email"
+                {...register('address.email')}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="john@example.com"
+              />
+              {errors.address?.email && <p className="text-xs text-error">{errors.address.email.message}</p>}
+            </div>
+            
+            <div className="space-y-1 md:col-span-2">
               <label className="text-sm font-medium text-text-secondary">Phone Number</label>
               <input
                 {...register('address.phone')}

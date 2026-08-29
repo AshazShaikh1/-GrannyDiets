@@ -1,5 +1,6 @@
 import * as React from 'react'
 import Link from 'next/link'
+import { formatOrderId } from '@/utils/format'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -28,7 +29,7 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
       {orderId && (
         <div className="mb-8 p-4 bg-surface border border-border rounded-lg inline-block">
           <p className="text-sm text-text-muted mb-1">Order Reference ID</p>
-          <p className="font-mono font-bold text-text-primary">{orderId}</p>
+          <p className="font-mono font-bold text-text-primary text-xl">{formatOrderId(orderId)}</p>
         </div>
       )}
 
