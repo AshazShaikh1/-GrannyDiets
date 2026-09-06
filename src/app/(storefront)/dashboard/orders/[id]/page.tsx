@@ -58,7 +58,7 @@ export default async function DashboardOrderDetailsPage({ params }: OrderDetails
         </Link>
         <div>
           <h2 className="text-2xl font-bold text-text-primary flex items-center gap-3">
-            Order #{order.id.slice(0, 8)}
+            Order #{order.id}
             <StatusBadge status={order.status} />
           </h2>
           <p className="text-sm text-text-secondary mt-1">

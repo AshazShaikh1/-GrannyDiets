@@ -21,7 +21,7 @@ export function OrderListClient({ orders }: { orders: any[] }) {
       {orders.map((o) => (
         <tr key={o.id} className="hover:bg-background/50">
           <td className="px-6 py-4 font-medium text-text-primary">
-            #{o.id.substring(0, 8)}
+            #{o.id}
           </td>
           <td className="px-6 py-4">
             <div className="font-medium text-text-primary">{o.profiles?.full_name || 'Guest'}</div>

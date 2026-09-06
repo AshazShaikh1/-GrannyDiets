@@ -36,7 +36,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
       </div>
 
       <PageHeader 
-        title={`Order #${order.id.substring(0, 8)}`} 
+        title={`Order #${order.id}`} 
         description={`Placed on ${new Date(order.created_at).toLocaleString()}`} 
         action={<StatusBadge status={order.status} />}
       />

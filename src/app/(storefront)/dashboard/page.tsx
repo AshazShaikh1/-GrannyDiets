@@ -70,7 +70,7 @@ export default async function DashboardOverviewPage() {
             {recentOrders.map((order) => (
               <div key={order.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg border border-border bg-background gap-4">
                 <div>
-                  <p className="font-semibold text-text-primary">Order #{order.id.slice(0, 8)}</p>
+                  <p className="font-semibold text-text-primary">Order #{order.id}</p>
                   <p className="text-sm text-text-secondary">{new Date(order.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">

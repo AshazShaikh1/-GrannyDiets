@@ -64,7 +64,7 @@ export default async function DashboardOrdersPage() {
               <div key={order.id} className="p-6 rounded-lg border border-border bg-background flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-primary/30 transition-colors">
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold text-text-primary">Order #{order.id.slice(0, 8)}</span>
+                    <span className="font-semibold text-text-primary">Order #{order.id}</span>
                     <StatusBadge status={order.status} />
                   </div>
                   <p className="text-sm text-text-secondary">
