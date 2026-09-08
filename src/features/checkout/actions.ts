@@ -158,7 +158,7 @@ export async function createOrderAction(
         body: JSON.stringify({
           amount: Math.round(finalTotal * 100), // amount in paise
           currency: 'INR',
-          receipt: order.id
+          receipt: order.id.toString()
         })
       });
 
