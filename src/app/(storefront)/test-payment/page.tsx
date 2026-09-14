@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { createOrderAction, verifyRazorpayPaymentAction } from '@/features/checkout/actions'
-import { getDummyProductAction } from './actions'
-import Script from 'next/script'
+import { getDummyProductAction, mockRazorpaySuccessAction } from './actions'
 
 export default function TestPaymentPage() {
   const [loading, setLoading] = useState(false)
@@ -55,52 +54,28 @@ export default function TestPaymentPage() {
         throw new Error('No Razorpay Order ID returned')
       }
 
-      addLog('Opening Razorpay Modal...')
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'dummy_key',
-        amount: orderResult.amount ? orderResult.amount * 100 : 0, 
-        currency: 'INR',
-        name: 'Granny Diets (TEST)',
-        description: 'Test Payment Integration',
-        order_id: orderResult.razorpayOrderId,
-        handler: async function (response: any) {
-          addLog('Razorpay Payment Successful (Frontend)', response)
-          toast.loading('Verifying payment on backend...', { id: 'test-payment' });
-          
-          try {
-            const verifyResult = await verifyRazorpayPaymentAction(
-              response.razorpay_payment_id,
-              response.razorpay_order_id,
-              response.razorpay_signature
-            );
+      addLog('Bypassing Razorpay UI and generating mock signature...')
+      const mockRes = await mockRazorpaySuccessAction(orderResult.razorpayOrderId)
+      
+      if (!mockRes.success || !mockRes.paymentId || !mockRes.signature) {
+        throw new Error('Failed to generate mock signature: ' + mockRes.error)
+      }
+      addLog('Generated Mock Signature', mockRes)
 
-            if (verifyResult.success) {
-              toast.success('Payment verified successfully!', { id: 'test-payment' });
-              addLog('Backend Verification SUCCESS', verifyResult)
-            } else {
-              toast.error('Payment verification failed', { id: 'test-payment' });
-              addLog('Backend Verification FAILED', verifyResult)
-            }
-          } catch (e: any) {
-            toast.error('Verification error', { id: 'test-payment' });
-            addLog('Backend Verification THREW ERROR', e.message)
-          }
-        },
-        prefill: {
-          name: dummyFormData.address.full_name,
-          contact: dummyFormData.address.phone,
-        },
-        theme: {
-          color: '#1a472a',
-        },
-      };
+      toast.loading('Verifying payment on backend...', { id: 'test-payment' });
+      const verifyResult = await verifyRazorpayPaymentAction(
+        mockRes.paymentId,
+        orderResult.razorpayOrderId,
+        mockRes.signature
+      );
 
-      const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
-        toast.error('Payment failed', { id: 'test-payment' })
-        addLog('Razorpay Modal: Payment Failed', response.error)
-      });
-      rzp.open();
+      if (verifyResult.success) {
+        toast.success('Payment verified successfully! Email should be sent.', { id: 'test-payment' });
+        addLog('Backend Verification SUCCESS', verifyResult)
+      } else {
+        toast.error('Payment verification failed', { id: 'test-payment' });
+        addLog('Backend Verification FAILED', verifyResult)
+      }
 
     } catch (e: any) {
       toast.error(e.message)
@@ -112,11 +87,10 @@ export default function TestPaymentPage() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto min-h-screen">
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       
-      <h1 className="text-3xl font-bold mb-4 text-text-primary">Full Payment Flow Tester</h1>
+      <h1 className="text-3xl font-bold mb-4 text-text-primary">1-Click Payment Flow Tester</h1>
       <p className="text-text-secondary mb-8">
-        This tool mimics the exact checkout process: it grabs a real product from the database, creates an order via <code>createOrderAction</code>, invokes the real Razorpay modal, and verifies the signature via <code>verifyRazorpayPaymentAction</code> on success.
+        This tool mimics the exact checkout process: it grabs a real product from the database, creates an order via <code>createOrderAction</code>, artificially generates a valid Razorpay signature, and verifies the signature via <code>verifyRazorpayPaymentAction</code> to completely test the backend DB and email logic without needing to click through the Razorpay UI.
       </p>
 
       <Button onClick={handleTestPayment} disabled={loading} size="lg">
