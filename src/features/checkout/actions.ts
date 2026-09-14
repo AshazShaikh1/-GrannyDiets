@@ -327,13 +327,14 @@ export async function verifyRazorpayPaymentAction(
         
       if (orderDetails) {
         // Send Email Notification on successful Razorpay payment
-        await sendOrderNotification(
+        const emailResult = await sendOrderNotification(
           payment.order_id, 
           orderDetails.total_amount, 
           orderDetails.payment_method, 
           orderDetails.shipping_address,
           emailItems
         );
+        return { success: true, emailResult };
       }
     }
 

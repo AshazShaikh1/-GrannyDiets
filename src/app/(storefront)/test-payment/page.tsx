@@ -70,7 +70,11 @@ export default function TestPaymentPage() {
       );
 
       if (verifyResult.success) {
-        toast.success('Payment verified successfully! Email should be sent.', { id: 'test-payment' });
+        if (verifyResult.emailResult && !verifyResult.emailResult.success) {
+          toast.warning('Payment verified, but email failed. Check logs.', { id: 'test-payment' });
+        } else {
+          toast.success('Payment verified successfully! Email should be sent.', { id: 'test-payment' });
+        }
         addLog('Backend Verification SUCCESS', verifyResult)
       } else {
         toast.error('Payment verification failed', { id: 'test-payment' });
