@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { formatOrderId } from '@/utils/format';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
-const adminEmail = 'ashazshaikh111@gmail.com';
+const adminEmail = 'grannydiets70@gmail.com';
 
 export async function sendOrderNotification(
   orderId: string, 
